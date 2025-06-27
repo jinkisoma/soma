@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>모바일 바코드 / QR 스캐너v01</title>
+  <title>모바일 바코드 / QR 스캐너</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
@@ -11,9 +11,11 @@
       background-color: #f9f9f9;
       padding: 20px;
     }
+
     h2 {
       text-align: center;
     }
+
     #reader {
       width: 100%;
       max-width: 400px;
@@ -21,7 +23,7 @@
       display: none;
       position: relative;
     }
-    /* 스캔 박스에 빨간 테두리 */
+
     .scan-line {
       position: absolute;
       top: 50%;
@@ -30,10 +32,12 @@
       height: 2px;
       background: red;
       animation: blink 1s infinite;
+      z-index: 10;
     }
+
     @keyframes blink {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.1; }
+      50% { opacity: 0.2; }
     }
 
     button {
@@ -45,8 +49,10 @@
       border-radius: 8px;
       color: white;
     }
+
     #scan-btn { background-color: #007bff; }
     #reset-btn { background-color: #dc3545; }
+    #copy-btn { background-color: #28a745; width: 100%; margin-top: 10px; }
 
     .summary {
       margin: 10px 0;
@@ -63,11 +69,13 @@
       margin-top: 15px;
       font-size: 14px;
     }
+
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
       text-align: center;
     }
+
     th {
       background-color: #eee;
     }
@@ -96,9 +104,12 @@
     <tbody id="result-body"></tbody>
   </table>
 
+  <button id="copy-btn">📋 전체 복사</button>
+
   <script>
     const scanBtn = document.getElementById('scan-btn');
     const resetBtn = document.getElementById('reset-btn');
+    const copyBtn = document.getElementById('copy-btn');
     const resultBody = document.getElementById('result-body');
     const countDisplay = document.getElementById('count');
     const summaryDisplay = document.getElementById('summary');
@@ -142,7 +153,7 @@
 
     function startScanning() {
       if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        alert("Chrome에서는 보안을 위해 HTTPS 환경에서만 카메라를 사용할 수 있습니다.");
+        alert("Chrome에서는 HTTPS 환경에서만 카메라 사용이 가능합니다.");
         return;
       }
 
@@ -150,14 +161,20 @@
 
       html5QrCode = new Html5Qrcode("reader");
       const config = {
-        fps: 10,
-        qrbox: { width: 300, height: 200 }, // 박스 크기 조정
+        fps: 15,
+        qrbox: { width: 300, height: 150 },
         rememberLastUsedCamera: true,
-        aspectRatio: 1.0,
+        aspectRatio: 1.777,
         supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true,
-        }
+        },
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.QR_CODE
+        ]
       };
 
       html5QrCode.start(
@@ -169,12 +186,27 @@
             saveData();
             renderTable();
           }
+          // 연속 스캔을 위해 재시작
+          html5QrCode.stop().then(() => {
+            html5QrCode.start(
+              { facingMode: "environment" },
+              config,
+              (text) => {
+                if (!scanned.includes(text)) {
+                  scanned.push(text);
+                  saveData();
+                  renderTable();
+                }
+              },
+              () => {}
+            );
+          });
         },
         (errorMessage) => {
-          // 오류 시 사용 가능
+          // 오류 로그 생략 가능
         }
       ).catch(err => {
-        alert("카메라를 사용할 수 없습니다.\n오류: " + err);
+        alert("카메라 접근 실패: " + err);
       });
 
       scanBtn.disabled = true;
@@ -189,6 +221,13 @@
         renderTable();
         location.reload();
       }
+    });
+
+    copyBtn.addEventListener('click', () => {
+      const text = scanned.join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        alert("전체 스캔 데이터를 복사했습니다.");
+      });
     });
 
     loadSavedData();
