@@ -135,11 +135,18 @@
       padding: 10px;
       font-size: 16px;
     }
+
+    #last-discrepancy {
+      color: red;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
 
-<h2>📷 모바일 바코드 / QR 스캐너 v.07</h2>
+<h2>📷 모바일 바코드 / QR 스캐너 v.08</h2>
 
 <div id="reader-wrapper">
   <div id="reader"></div>
@@ -161,6 +168,7 @@
 <div class="summary" id="summary"></div>
 <div id="scan-status">✅ 스캔 완료!</div>
 <div id="duplicate-status">⚠️ 중복값입니다!</div>
+<div id="last-discrepancy"></div>
 
 <h3>스캔된 목록 (<span id="count">0</span>건)</h3>
 <table>
@@ -186,6 +194,7 @@
   const readerWrapper = document.getElementById('reader-wrapper');
   const scanStatus = document.getElementById('scan-status');
   const duplicateStatus = document.getElementById('duplicate-status');
+  const lastDiscrepancy = document.getElementById('last-discrepancy');
   const beepSound = document.getElementById('beep-sound');
   const sirenSound = document.getElementById('siren-sound');
   const manualInputWrapper = document.getElementById('manual-input');
@@ -194,7 +203,7 @@
   let html5QrCode;
   let scanned = [];
   let lastScanTime = 0;
-  const scanDelay = 1000;
+  const scanDelay = 200; // ✅ 여기서 딜레이(ms) 조절 가능 (예: 200ms = 0.2초)
 
   function updateSummary() {
     const first = scanned[0] || '-';
@@ -205,18 +214,6 @@
       <strong>처음값:</strong> ${first} &nbsp;&nbsp; <strong>최근값:</strong> ${last}<br>
       <strong>중복값 총합계:</strong> ${duplicates}건 &nbsp;&nbsp; <strong>합계:</strong> ${total}건
     `;
-  }
-
-  function loadSavedData() {
-    const saved = localStorage.getItem('scannedCodes');
-    if (saved) {
-      scanned = JSON.parse(saved);
-      renderTable();
-    }
-  }
-
-  function saveData() {
-    localStorage.setItem('scannedCodes', JSON.stringify(scanned));
   }
 
   function renderTable() {
@@ -259,10 +256,27 @@
     if (now - lastScanTime < scanDelay) return;
     lastScanTime = now;
     scanned.push(decodedText);
-    saveData();
-    renderTable();
     const isDuplicate = scanned.filter(x => x === decodedText).length > 1;
     showScanFeedback(isDuplicate);
+    renderTable();
+    saveData();
+    if ((new Set(scanned)).size !== scanned.length) {
+      lastDiscrepancy.innerText = `※ 입력 누락 가능성: 최근 스캔값 → ${decodedText}`;
+    } else {
+      lastDiscrepancy.innerText = '';
+    }
+  }
+
+  function saveData() {
+    localStorage.setItem('scannedCodes', JSON.stringify(scanned));
+  }
+
+  function loadSavedData() {
+    const saved = localStorage.getItem('scannedCodes');
+    if (saved) {
+      scanned = JSON.parse(saved);
+      renderTable();
+    }
   }
 
   function startScanning() {
@@ -273,7 +287,7 @@
     readerWrapper.style.display = 'block';
     html5QrCode = new Html5Qrcode("reader");
     const config = {
-      fps: 15,
+      fps: 30,
       qrbox: { width: 300, height: 300 },
       formatsToSupport: [ Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.EAN_13 ]
     };
@@ -315,6 +329,7 @@
     const text = scanned.join('\n');
     navigator.clipboard.writeText(text).then(() => alert("전체 데이터를 복사했습니다."));
   });
+
   loadSavedData();
 </script>
 </body>
