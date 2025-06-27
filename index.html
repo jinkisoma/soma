@@ -22,14 +22,14 @@
       width: 100%;
       max-width: 400px;
       margin: auto;
-      display: none;
+      margin-bottom: 10px;
     }
 
     #reader {
       width: 100%;
       height: 400px;
       position: relative;
-      background-color: rgba(0, 0, 0, 0.7); /* 어두운 배경 */
+      background-color: rgba(0, 0, 0, 0.7);
       overflow: hidden;
     }
 
@@ -114,14 +114,7 @@
 </head>
 <body>
 
-<h2>📷 모바일 바코드 / QR 스캐너 v.02</h2>
-
-<div style="text-align:center">
-  <button id="scan-btn">스캔 시작</button>
-  <button id="reset-btn">초기화</button>
-</div>
-
-<div class="summary" id="summary">스캔 정보를 불러오는 중...</div>
+<h2>📷 모바일 바코드 / QR 스캐너 v.03</h2>
 
 <div id="reader-wrapper">
   <div id="reader"></div>
@@ -129,6 +122,13 @@
     <div class="scan-line"></div>
   </div>
 </div>
+
+<div style="text-align:center">
+  <button id="scan-btn">스캔 시작</button>
+  <button id="reset-btn">초기화</button>
+</div>
+
+<div class="summary" id="summary">스캔 정보를 불러오는 중...</div>
 
 <div id="scan-status">✅ 스캔 완료!</div>
 <div id="duplicate-status">⚠️ 중복값입니다!</div>
@@ -214,10 +214,14 @@
 
   function showScanFeedback(isDuplicate = false) {
     if (isDuplicate) {
+      sirenSound.pause();
+      sirenSound.currentTime = 0;
       sirenSound.play();
       duplicateStatus.style.display = 'block';
       scanStatus.style.display = 'none';
     } else {
+      beepSound.pause();
+      beepSound.currentTime = 0;
       beepSound.play();
       scanStatus.style.display = 'block';
       duplicateStatus.style.display = 'none';
@@ -294,4 +298,3 @@
 </script>
 </body>
 </html>
-
