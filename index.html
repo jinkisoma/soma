@@ -127,7 +127,7 @@
 </head>
 <body>
 
-<h2>📷 모바일 바코드 / QR 스캐너 v.05</h2>
+<h2>📷 모바일 바코드 / QR 스캐너 v.06</h2>
 
 <div id="reader-wrapper">
   <div id="reader"></div>
@@ -236,6 +236,17 @@
     }, 1000);
   }
 
+  function handleScannedText(decodedText) {
+    const now = Date.now();
+    if (now - lastScanTime < scanDelay) return;
+    lastScanTime = now;
+    scanned.push(decodedText);
+    saveData();
+    renderTable();
+    const isDuplicate = scanned.filter(x => x === decodedText).length > 1;
+    showScanFeedback(isDuplicate);
+  }
+
   function startScanning() {
     if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
       alert("HTTPS 환경에서만 카메라 사용이 가능합니다.");
@@ -251,30 +262,25 @@
     html5QrCode.start(
       { facingMode: "environment" },
       config,
-      (decodedText) => {
-        const now = Date.now();
-        if (now - lastScanTime < scanDelay) return;
-        lastScanTime = now;
-        scanned.push(decodedText);
-        saveData();
-        renderTable();
-        const isDuplicate = scanned.filter(x => x === decodedText).length > 1;
-        showScanFeedback(isDuplicate);
-      },
+      handleScannedText,
       (errorMessage) => {}
     ).catch(err => alert("카메라 시작 오류: " + err));
     scanBtn.disabled = true;
   }
 
-  async function startBluetoothScanner() {
-    try {
-      const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: [] });
-      alert("블루투스 기기 연결됨: " + device.name);
-      // 실제 블루투스 입력은 별도 구현 필요
-      // 예: HID 바코드 리더기에서 키보드 입력으로 처리됨
-    } catch (error) {
-      alert("블루투스 연결 오류: " + error);
-    }
+  function startBluetoothScanner() {
+    alert("블루투스 스캐너와 연결되었습니다. 키보드 입력으로 바코드가 인식됩니다.");
+    window.addEventListener('keydown', function (e) {
+      if (!e.repeat) {
+        if (!window.btBuffer) window.btBuffer = '';
+        if (e.key === 'Enter') {
+          handleScannedText(window.btBuffer);
+          window.btBuffer = '';
+        } else {
+          window.btBuffer += e.key;
+        }
+      }
+    });
   }
 
   scanBtn.addEventListener('click', startScanning);
