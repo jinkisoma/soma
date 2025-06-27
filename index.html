@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>모바일 바코드 / QR 스캐너 v.01</title>
+  <title>모바일 바코드 / QR 스캐너</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
@@ -93,7 +93,7 @@
 </head>
 <body>
 
-  <h2>📷 모바일 바코드 / QR 스캐너 v.01</h2>
+  <h2>📷 모바일 바코드 / QR 스캐너 v.02</h2>
 
   <div style="text-align:center">
     <button id="scan-btn">스캔 시작</button>
@@ -118,10 +118,8 @@
 
   <button id="copy-btn">📋 전체 복사</button>
 
-  <!-- Beep sound (base64 내장 mp3) -->
-  <audio id="beep-sound">
-    <source src="data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAw... (생략됨)" type="audio/mp3">
-  </audio>
+  <!-- 무료 효과음 링크 -->
+  <audio id="beep-sound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
 
   <script>
     const scanBtn = document.getElementById('scan-btn');
@@ -220,7 +218,7 @@
           showScanFeedback();
         },
         (errorMessage) => {
-          // 인식 실패 로그 (필요 시 사용)
+          // 스캔 실패시 처리 필요 시 여기에 추가
         }
       ).catch(err => {
         alert("카메라 접근 실패: " + err);
