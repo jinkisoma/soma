@@ -11,11 +11,9 @@
       background-color: #f9f9f9;
       padding: 20px;
     }
-
     h2 {
       text-align: center;
     }
-
     #reader {
       width: 100%;
       max-width: 400px;
@@ -25,7 +23,6 @@
       border: 4px solid transparent;
       transition: border 0.3s;
     }
-
     .scan-line {
       position: absolute;
       top: 50%;
@@ -36,12 +33,10 @@
       animation: blink 1s infinite;
       z-index: 10;
     }
-
     @keyframes blink {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.2; }
     }
-
     button {
       width: 48%;
       padding: 10px;
@@ -51,11 +46,9 @@
       border-radius: 8px;
       color: white;
     }
-
     #scan-btn { background-color: #007bff; }
     #reset-btn { background-color: #dc3545; }
     #copy-btn { background-color: #28a745; width: 100%; margin-top: 10px; }
-
     .summary {
       margin: 10px 0;
       font-size: 15px;
@@ -64,7 +57,6 @@
       padding: 10px;
       border-radius: 8px;
     }
-
     #scan-status {
       text-align: center;
       font-weight: bold;
@@ -72,20 +64,24 @@
       margin-top: 10px;
       display: none;
     }
-
+    #duplicate-status {
+      text-align: center;
+      font-weight: bold;
+      color: red;
+      margin-top: 10px;
+      display: none;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 15px;
       font-size: 14px;
     }
-
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
       text-align: center;
     }
-
     th {
       background-color: #eee;
     }
@@ -93,159 +89,180 @@
 </head>
 <body>
 
-  <h2>📷 모바일 바코드 / QR 스캐너 v.02</h2>
+<h2>📷 모바일 바코드 / QR 스캐너 v.03</h2>
 
-  <div style="text-align:center">
-    <button id="scan-btn">스캔 시작</button>
-    <button id="reset-btn">초기화</button>
-  </div>
+<div style="text-align:center">
+  <button id="scan-btn">스캔 시작</button>
+  <button id="reset-btn">초기화</button>
+</div>
 
-  <div class="summary" id="summary">스캔 정보를 불러오는 중...</div>
+<div class="summary" id="summary">스캔 정보를 불러오는 중...</div>
 
-  <div id="reader">
-    <div class="scan-line"></div>
-  </div>
+<div id="reader">
+  <div class="scan-line"></div>
+</div>
 
-  <div id="scan-status">✅ 스캔 완료!</div>
+<div id="scan-status">✅ 스캔 완료!</div>
+<div id="duplicate-status">⚠️ 중복값입니다!</div>
 
-  <h3>스캔된 목록 (<span id="count">0</span>건)</h3>
-  <table>
-    <thead>
-      <tr><th>번호</th><th>코드</th></tr>
-    </thead>
-    <tbody id="result-body"></tbody>
-  </table>
+<h3>스캔된 목록 (<span id="count">0</span>건)</h3>
+<table>
+  <thead>
+    <tr><th>번호</th><th>코드</th><th>중복횟수</th></tr>
+  </thead>
+  <tbody id="result-body"></tbody>
+</table>
 
-  <button id="copy-btn">📋 전체 복사</button>
+<button id="copy-btn">📋 전체 복사</button>
 
-  <!-- 무료 효과음 링크 -->
-  <audio id="beep-sound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
+<!-- 효과음 -->
+<audio id="beep-sound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
+<audio id="siren-sound" src="https://actions.google.com/sounds/v1/emergency/emergency_siren.ogg" preload="auto"></audio>
 
-  <script>
-    const scanBtn = document.getElementById('scan-btn');
-    const resetBtn = document.getElementById('reset-btn');
-    const copyBtn = document.getElementById('copy-btn');
-    const resultBody = document.getElementById('result-body');
-    const countDisplay = document.getElementById('count');
-    const summaryDisplay = document.getElementById('summary');
-    const readerElement = document.getElementById('reader');
-    const scanStatus = document.getElementById('scan-status');
-    const beepSound = document.getElementById('beep-sound');
+<script>
+  const scanBtn = document.getElementById('scan-btn');
+  const resetBtn = document.getElementById('reset-btn');
+  const copyBtn = document.getElementById('copy-btn');
+  const resultBody = document.getElementById('result-body');
+  const countDisplay = document.getElementById('count');
+  const summaryDisplay = document.getElementById('summary');
+  const readerElement = document.getElementById('reader');
+  const scanStatus = document.getElementById('scan-status');
+  const duplicateStatus = document.getElementById('duplicate-status');
+  const beepSound = document.getElementById('beep-sound');
+  const sirenSound = document.getElementById('siren-sound');
 
-    let html5QrCode;
-    let scanned = [];
+  let html5QrCode;
+  let scanned = [];
 
-    function updateSummary() {
-      const first = scanned[0] || '-';
-      const last = scanned[scanned.length - 1] || '-';
-      const total = scanned.length;
-      const duplicates = total - [...new Set(scanned)].length;
+  function updateSummary() {
+    const first = scanned[0] || '-';
+    const last = scanned[scanned.length - 1] || '-';
+    const total = scanned.length;
+    const duplicates = scanned.length - new Set(scanned).size;
 
-      summaryDisplay.innerHTML = `
-        <strong>처음값:</strong> ${first}<br>
-        <strong>최근값:</strong> ${last}<br>
-        <strong>중복값:</strong> ${duplicates}건<br>
-        <strong>합계:</strong> ${total}건
-      `;
+    summaryDisplay.innerHTML = `
+      <strong>처음값:</strong> ${first}<br>
+      <strong>최근값:</strong> ${last}<br>
+      <strong>중복값 총합계:</strong> ${duplicates}건<br>
+      <strong>합계:</strong> ${total}건
+    `;
+  }
+
+  function loadSavedData() {
+    const saved = localStorage.getItem('scannedCodes');
+    if (saved) {
+      scanned = JSON.parse(saved);
+      renderTable();
     }
+  }
 
-    function loadSavedData() {
-      const saved = localStorage.getItem('scannedCodes');
-      if (saved) {
-        scanned = JSON.parse(saved);
-        renderTable();
-      }
-    }
+  function saveData() {
+    localStorage.setItem('scannedCodes', JSON.stringify(scanned));
+  }
 
-    function saveData() {
-      localStorage.setItem('scannedCodes', JSON.stringify(scanned));
-    }
+  function renderTable() {
+    resultBody.innerHTML = '';
+    const countMap = {};
+    scanned.forEach(code => {
+      countMap[code] = (countMap[code] || 0) + 1;
+    });
 
-    function renderTable() {
-      resultBody.innerHTML = '';
-      scanned.forEach((item, index) => {
-        resultBody.innerHTML += `<tr><td>${index + 1}</td><td>${item}</td></tr>`;
-      });
-      countDisplay.innerText = scanned.length;
-      updateSummary();
-    }
+    Object.keys(countMap).forEach((code, index) => {
+      resultBody.innerHTML += `<tr>
+        <td>${index + 1}</td>
+        <td>${code}</td>
+        <td>${countMap[code]}회</td>
+      </tr>`;
+    });
 
-    function showScanFeedback() {
+    countDisplay.innerText = scanned.length;
+    updateSummary();
+  }
+
+  function showScanFeedback(isDuplicate = false) {
+    if (isDuplicate) {
+      sirenSound.play();
+      duplicateStatus.style.display = 'block';
+      readerElement.style.border = '4px solid red';
+      scanStatus.style.display = 'none';
+    } else {
       beepSound.play();
       scanStatus.style.display = 'block';
+      duplicateStatus.style.display = 'none';
       readerElement.style.border = '4px solid #28a745';
-
-      setTimeout(() => {
-        scanStatus.style.display = 'none';
-        readerElement.style.border = '4px solid transparent';
-      }, 800);
     }
 
-    function startScanning() {
-      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        alert("Chrome에서는 HTTPS 환경에서만 카메라 사용이 가능합니다.");
-        return;
-      }
+    setTimeout(() => {
+      scanStatus.style.display = 'none';
+      duplicateStatus.style.display = 'none';
+      readerElement.style.border = '4px solid transparent';
+    }, 1000);
+  }
 
-      readerElement.style.display = 'block';
-
-      html5QrCode = new Html5Qrcode("reader");
-
-      const config = {
-        fps: 15,
-        qrbox: { width: 300, height: 150 },
-        rememberLastUsedCamera: true,
-        aspectRatio: 1.777,
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true,
-        },
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.CODE_39
-        ]
-      };
-
-      html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        (decodedText) => {
-          if (!scanned.includes(decodedText)) {
-            scanned.push(decodedText);
-            saveData();
-            renderTable();
-          }
-          showScanFeedback();
-        },
-        (errorMessage) => {
-          // 스캔 실패시 처리 필요 시 여기에 추가
-        }
-      ).catch(err => {
-        alert("카메라 접근 실패: " + err);
-      });
-
-      scanBtn.disabled = true;
+  function startScanning() {
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+      alert("Chrome에서는 HTTPS 환경에서만 카메라 사용이 가능합니다.");
+      return;
     }
 
-    scanBtn.addEventListener('click', startScanning);
+    readerElement.style.display = 'block';
 
-    resetBtn.addEventListener('click', () => {
-      if (confirm('정말 초기화 하시겠습니까?')) {
-        scanned = [];
+    html5QrCode = new Html5Qrcode("reader");
+
+    const config = {
+      fps: 15,
+      qrbox: { width: 300, height: 150 },
+      rememberLastUsedCamera: true,
+      aspectRatio: 1.777,
+      experimentalFeatures: {
+        useBarCodeDetectorIfSupported: true,
+      },
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.CODE_39
+      ]
+    };
+
+    html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText) => {
+        scanned.push(decodedText);
         saveData();
         renderTable();
-        location.reload();
-      }
+
+        const counts = scanned.filter(x => x === decodedText).length;
+        showScanFeedback(counts > 1);
+      },
+      (errorMessage) => {}
+    ).catch(err => {
+      alert("카메라 접근 실패: " + err);
     });
 
-    copyBtn.addEventListener('click', () => {
-      const text = scanned.join('\n');
-      navigator.clipboard.writeText(text).then(() => {
-        alert("전체 스캔 데이터를 복사했습니다.");
-      });
-    });
+    scanBtn.disabled = true;
+  }
 
-    loadSavedData();
-  </script>
+  scanBtn.addEventListener('click', startScanning);
+
+  resetBtn.addEventListener('click', () => {
+    if (confirm('정말 초기화 하시겠습니까?')) {
+      scanned = [];
+      saveData();
+      renderTable();
+      location.reload();
+    }
+  });
+
+  copyBtn.addEventListener('click', () => {
+    const text = scanned.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      alert("전체 스캔 데이터를 복사했습니다.");
+    });
+  });
+
+  loadSavedData();
+</script>
 </body>
 </html>
