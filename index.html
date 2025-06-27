@@ -123,11 +123,23 @@
     th {
       background-color: #eee;
     }
+
+    #manual-input {
+      display: none;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    #manual-input input {
+      width: 80%;
+      padding: 10px;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
 
-<h2>📷 모바일 바코드 / QR 스캐너 v.06</h2>
+<h2>📷 모바일 바코드 / QR 스캐너 v.07</h2>
 
 <div id="reader-wrapper">
   <div id="reader"></div>
@@ -140,6 +152,10 @@
   <button id="scan-btn">스캔 시작</button>
   <button id="reset-btn">초기화</button>
   <button id="bt-btn">블루투스</button>
+</div>
+
+<div id="manual-input">
+  <input type="text" id="bt-manual" placeholder="블루투스 바코드 입력 후 Enter" />
 </div>
 
 <div class="summary" id="summary"></div>
@@ -172,6 +188,8 @@
   const duplicateStatus = document.getElementById('duplicate-status');
   const beepSound = document.getElementById('beep-sound');
   const sirenSound = document.getElementById('siren-sound');
+  const manualInputWrapper = document.getElementById('manual-input');
+  const manualInput = document.getElementById('bt-manual');
 
   let html5QrCode;
   let scanned = [];
@@ -269,15 +287,15 @@
   }
 
   function startBluetoothScanner() {
-    alert("블루투스 스캐너와 연결되었습니다. 키보드 입력으로 바코드가 인식됩니다.");
-    window.addEventListener('keydown', function (e) {
-      if (!e.repeat) {
-        if (!window.btBuffer) window.btBuffer = '';
-        if (e.key === 'Enter') {
-          handleScannedText(window.btBuffer);
-          window.btBuffer = '';
-        } else {
-          window.btBuffer += e.key;
+    alert("블루투스 스캐너 또는 수기입력 가능. 엔터 입력시 자동 처리됩니다.");
+    manualInputWrapper.style.display = 'block';
+    manualInput.focus();
+    manualInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        const value = manualInput.value.trim();
+        if (value !== '') {
+          handleScannedText(value);
+          manualInput.value = '';
         }
       }
     });
