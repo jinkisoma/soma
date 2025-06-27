@@ -23,6 +23,7 @@
       max-width: 400px;
       margin: auto;
       margin-bottom: 10px;
+      display: none;
     }
 
     #reader {
@@ -61,10 +62,16 @@
       50% { opacity: 0.3; }
     }
 
+    .button-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
     button {
-      width: 48%;
+      flex: 1;
       padding: 10px;
-      margin: 5px 1%;
+      margin: 5px;
       font-size: 16px;
       border: none;
       border-radius: 8px;
@@ -114,7 +121,7 @@
 </head>
 <body>
 
-<h2>📷 모바일 바코드 / QR 스캐너 v.03</h2>
+<h2>📷 모바일 바코드 / QR 스캐너 v.04</h2>
 
 <div id="reader-wrapper">
   <div id="reader"></div>
@@ -123,12 +130,12 @@
   </div>
 </div>
 
-<div style="text-align:center">
+<div class="button-row">
   <button id="scan-btn">스캔 시작</button>
   <button id="reset-btn">초기화</button>
 </div>
 
-<div class="summary" id="summary">스캔 정보를 불러오는 중...</div>
+<div class="summary" id="summary"></div>
 
 <div id="scan-status">✅ 스캔 완료!</div>
 <div id="duplicate-status">⚠️ 중복값입니다!</div>
@@ -163,9 +170,7 @@
   let html5QrCode;
   let scanned = [];
   let lastScanTime = 0;
-
-  // 🔧 스캔 간격 설정 (밀리초 단위)
-  const scanDelay = 1000;
+  const scanDelay = 1000; // 🔧 스캔 간격(ms) 조정 가능
 
   function updateSummary() {
     const first = scanned[0] || '-';
@@ -174,10 +179,8 @@
     const duplicates = scanned.length - new Set(scanned).size;
 
     summaryDisplay.innerHTML = `
-      <strong>처음값:</strong> ${first}<br>
-      <strong>최근값:</strong> ${last}<br>
-      <strong>중복값 총합계:</strong> ${duplicates}건<br>
-      <strong>합계:</strong> ${total}건
+      <strong>처음값:</strong> ${first} &nbsp;&nbsp; <strong>최근값:</strong> ${last}<br>
+      <strong>중복값 총합계:</strong> ${duplicates}건 &nbsp;&nbsp; <strong>합계:</strong> ${total}건
     `;
   }
 
