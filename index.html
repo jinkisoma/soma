@@ -146,7 +146,7 @@
 </head>
 <body>
 
-<h2>📷 모바일 바코드 / QR 스캐너 v.09</h2>
+<h2>📷 모바일 바코드 / QR 스캐너 v.10</h2>
 
 <div id="reader-wrapper">
   <div id="reader"></div>
@@ -203,7 +203,7 @@
   let html5QrCode;
   let scanned = [];
   let lastScanTime = 0;
-  const scanDelay = 100; // ✅ 여기서 딜레이(ms) 조절 가능 (예: 100ms = 0.1초)
+  const scanDelay = 500; // ✅ 여기서 딜레이(ms) 조절 가능 (예: 500ms = 0.5초)
 
   function updateSummary() {
     const first = scanned[0] || '-';
@@ -339,3 +339,4 @@ if (uniqueCount !== resultBody.querySelectorAll("tr").length) {
 </script>
 </body>
 </html>
+
