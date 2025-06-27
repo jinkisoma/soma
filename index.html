@@ -19,7 +19,23 @@
       max-width: 400px;
       margin: auto;
       display: none;
+      position: relative;
     }
+    /* 스캔 박스에 빨간 테두리 */
+    .scan-line {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: red;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.1; }
+    }
+
     button {
       width: 48%;
       padding: 10px;
@@ -31,6 +47,16 @@
     }
     #scan-btn { background-color: #007bff; }
     #reset-btn { background-color: #dc3545; }
+
+    .summary {
+      margin: 10px 0;
+      font-size: 15px;
+      text-align: center;
+      background: #eee;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -56,7 +82,11 @@
     <button id="reset-btn">초기화</button>
   </div>
 
-  <div id="reader"></div>
+  <div class="summary" id="summary">스캔 정보를 불러오는 중...</div>
+
+  <div id="reader">
+    <div class="scan-line"></div>
+  </div>
 
   <h3>스캔된 목록 (<span id="count">0</span>건)</h3>
   <table>
@@ -71,8 +101,23 @@
     const resetBtn = document.getElementById('reset-btn');
     const resultBody = document.getElementById('result-body');
     const countDisplay = document.getElementById('count');
+    const summaryDisplay = document.getElementById('summary');
     let html5QrCode;
     let scanned = [];
+
+    function updateSummary() {
+      const first = scanned[0] || '-';
+      const last = scanned[scanned.length - 1] || '-';
+      const total = scanned.length;
+      const duplicates = total - [...new Set(scanned)].length;
+
+      summaryDisplay.innerHTML = `
+        <strong>처음값:</strong> ${first}<br>
+        <strong>최근값:</strong> ${last}<br>
+        <strong>중복값:</strong> ${duplicates}건<br>
+        <strong>합계:</strong> ${total}건
+      `;
+    }
 
     function loadSavedData() {
       const saved = localStorage.getItem('scannedCodes');
@@ -92,12 +137,12 @@
         resultBody.innerHTML += `<tr><td>${index + 1}</td><td>${item}</td></tr>`;
       });
       countDisplay.innerText = scanned.length;
+      updateSummary();
     }
 
     function startScanning() {
-      // https 환경 확인
       if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        alert("Chrome에서는 보안을 위해 HTTPS 환경에서만 카메라를 사용할 수 있습니다.\n주소창이 https://로 시작하는지 확인해 주세요.");
+        alert("Chrome에서는 보안을 위해 HTTPS 환경에서만 카메라를 사용할 수 있습니다.");
         return;
       }
 
@@ -106,13 +151,13 @@
       html5QrCode = new Html5Qrcode("reader");
       const config = {
         fps: 10,
-        qrbox: { width: 250, height: 250 },
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.QR_CODE,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.EAN_13,
-        ]
+        qrbox: { width: 300, height: 200 }, // 박스 크기 조정
+        rememberLastUsedCamera: true,
+        aspectRatio: 1.0,
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true,
+        }
       };
 
       html5QrCode.start(
@@ -126,10 +171,10 @@
           }
         },
         (errorMessage) => {
-          // 오류 로그 필요 시 사용
+          // 오류 시 사용 가능
         }
       ).catch(err => {
-        alert("카메라를 사용할 수 없습니다. Chrome 브라우저인지 확인하거나, 권한을 허용해 주세요.\n\n오류: " + err);
+        alert("카메라를 사용할 수 없습니다.\n오류: " + err);
       });
 
       scanBtn.disabled = true;
