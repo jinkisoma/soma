@@ -146,7 +146,7 @@
 </head>
 <body>
 
-<h2>📷 모바일 바코드 / QR 스캐너 v.08</h2>
+<h2>📷 모바일 바코드 / QR 스캐너 v.09</h2>
 
 <div id="reader-wrapper">
   <div id="reader"></div>
@@ -203,7 +203,7 @@
   let html5QrCode;
   let scanned = [];
   let lastScanTime = 0;
-  const scanDelay = 200; // ✅ 여기서 딜레이(ms) 조절 가능 (예: 200ms = 0.2초)
+  const scanDelay = 100; // ✅ 여기서 딜레이(ms) 조절 가능 (예: 100ms = 0.1초)
 
   function updateSummary() {
     const first = scanned[0] || '-';
@@ -260,11 +260,16 @@
     showScanFeedback(isDuplicate);
     renderTable();
     saveData();
-    if ((new Set(scanned)).size !== scanned.length) {
-      lastDiscrepancy.innerText = `※ 입력 누락 가능성: 최근 스캔값 → ${decodedText}`;
-    } else {
-      lastDiscrepancy.innerText = '';
-    }
+
+  // 수정 후:
+const uniqueCount = new Set(scanned).size;
+const totalCount = scanned.length;
+if (uniqueCount !== resultBody.querySelectorAll("tr").length) {
+  lastDiscrepancy.innerText = `※ 입력 누락 가능성: 최근 스캔값 → ${decodedText}`;
+} else {
+  lastDiscrepancy.innerText = '';
+}
+
   }
 
   function saveData() {
