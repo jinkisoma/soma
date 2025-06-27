@@ -9,6 +9,7 @@
     body {
       font-family: '맑은 고딕', sans-serif;
       background-color: #f9f9f9;
+      margin: 0;
       padding: 10px;
     }
 
@@ -16,32 +17,48 @@
       text-align: center;
     }
 
-    #reader {
+    #reader-wrapper {
+      position: relative;
       width: 100%;
       max-width: 400px;
       margin: auto;
       display: none;
+    }
+
+    #reader {
+      width: 100%;
+      height: 400px;
       position: relative;
-      border: 4px solid transparent;
-      transition: border 0.3s;
-      height: 200px; /* 🔧 스캔 뷰포트 주변 여백 최소화 */
+      background-color: rgba(0, 0, 0, 0.7); /* 어두운 배경 */
       overflow: hidden;
+    }
+
+    .scan-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 300px;
+      height: 300px;
+      transform: translate(-50%, -50%);
+      border: 2px solid transparent;
+      box-sizing: border-box;
     }
 
     .scan-line {
       position: absolute;
       top: 50%;
-      left: 0;
+      left: 50%;
       width: 100%;
       height: 2px;
       background: red;
+      transform: translate(-50%, -50%);
       animation: blink 1s infinite;
-      z-index: 10;
+      z-index: 2;
     }
 
     @keyframes blink {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.2; }
+      50% { opacity: 0.3; }
     }
 
     button {
@@ -67,21 +84,15 @@
       border-radius: 8px;
     }
 
-    #scan-status {
+    #scan-status, #duplicate-status {
       text-align: center;
       font-weight: bold;
-      color: green;
-      margin-top: 10px;
       display: none;
+      margin-top: 10px;
     }
 
-    #duplicate-status {
-      text-align: center;
-      font-weight: bold;
-      color: red;
-      margin-top: 10px;
-      display: none;
-    }
+    #scan-status { color: green; }
+    #duplicate-status { color: red; }
 
     table {
       width: 100%;
@@ -103,7 +114,7 @@
 </head>
 <body>
 
-<h2>📷 모바일 바코드 / QR 스캐너 v.01</h2>
+<h2>📷 모바일 바코드 / QR 스캐너 v.02</h2>
 
 <div style="text-align:center">
   <button id="scan-btn">스캔 시작</button>
@@ -112,8 +123,11 @@
 
 <div class="summary" id="summary">스캔 정보를 불러오는 중...</div>
 
-<div id="reader">
-  <div class="scan-line"></div>
+<div id="reader-wrapper">
+  <div id="reader"></div>
+  <div class="scan-box">
+    <div class="scan-line"></div>
+  </div>
 </div>
 
 <div id="scan-status">✅ 스캔 완료!</div>
@@ -140,7 +154,7 @@
   const resultBody = document.getElementById('result-body');
   const countDisplay = document.getElementById('count');
   const summaryDisplay = document.getElementById('summary');
-  const readerElement = document.getElementById('reader');
+  const readerWrapper = document.getElementById('reader-wrapper');
   const scanStatus = document.getElementById('scan-status');
   const duplicateStatus = document.getElementById('duplicate-status');
   const beepSound = document.getElementById('beep-sound');
@@ -150,7 +164,7 @@
   let scanned = [];
   let lastScanTime = 0;
 
-  // 🔧 스캔 간격 설정 (밀리초 단위, 예: 1000ms = 1초)
+  // 🔧 스캔 간격 설정 (밀리초 단위)
   const scanDelay = 1000;
 
   function updateSummary() {
@@ -202,44 +216,36 @@
     if (isDuplicate) {
       sirenSound.play();
       duplicateStatus.style.display = 'block';
-      readerElement.style.border = '4px solid red';
       scanStatus.style.display = 'none';
     } else {
       beepSound.play();
       scanStatus.style.display = 'block';
       duplicateStatus.style.display = 'none';
-      readerElement.style.border = '4px solid #28a745';
     }
 
     setTimeout(() => {
       scanStatus.style.display = 'none';
       duplicateStatus.style.display = 'none';
-      readerElement.style.border = '4px solid transparent';
     }, 1000);
   }
 
   function startScanning() {
     if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-      alert("Chrome에서는 HTTPS 환경에서만 카메라 사용이 가능합니다.");
+      alert("HTTPS 환경에서만 카메라 사용이 가능합니다.");
       return;
     }
 
-    readerElement.style.display = 'block';
+    readerWrapper.style.display = 'block';
 
     html5QrCode = new Html5Qrcode("reader");
 
     const config = {
       fps: 15,
-      qrbox: { width: 300, height: 150 },
-      rememberLastUsedCamera: true,
-      aspectRatio: 1.777,
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true,
-      },
+      qrbox: { width: 300, height: 300 },
       formatsToSupport: [
         Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.CODE_39
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.EAN_13
       ]
     };
 
@@ -248,7 +254,7 @@
       config,
       (decodedText) => {
         const now = Date.now();
-        if (now - lastScanTime < scanDelay) return; // 🔧 시간텀 체크
+        if (now - lastScanTime < scanDelay) return;
         lastScanTime = now;
 
         scanned.push(decodedText);
@@ -260,7 +266,7 @@
       },
       (errorMessage) => {}
     ).catch(err => {
-      alert("카메라 접근 실패: " + err);
+      alert("카메라 시작 오류: " + err);
     });
 
     scanBtn.disabled = true;
@@ -280,7 +286,7 @@
   copyBtn.addEventListener('click', () => {
     const text = scanned.join('\n');
     navigator.clipboard.writeText(text).then(() => {
-      alert("전체 스캔 데이터를 복사했습니다.");
+      alert("전체 데이터를 복사했습니다.");
     });
   });
 
@@ -288,3 +294,4 @@
 </script>
 </body>
 </html>
+
