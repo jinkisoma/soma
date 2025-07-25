@@ -212,11 +212,19 @@
   const sirenSound = document.getElementById('siren-sound');
   const manualInputWrapper = document.getElementById('manual-input');
   const manualInput = document.getElementById('bt-manual');
+  const dedupCheckbox = document.getElementById('dedup-checkbox');
+  const delayInput = document.getElementById('delay-input');
+
 
   let html5QrCode;
   let scanned = [];
   let lastScanTime = 0;
-  const scanDelay = 1000; // ✅ 여기서 딜레이(ms) 조절 가능 (예: 1000ms = 1초)
+  let scanDelay = parseInt(delayInput.value, 10);
+
+  delayInput.addEventListener('change', () => {
+    const val = parseInt(delayInput.value, 10);
+    if (!isNaN(val) && val >= 0) scanDelay = val;
+  });
 
   function updateSummary() {
     const first = scanned[0] || '-';
@@ -268,6 +276,12 @@
     const now = Date.now();
     if (now - lastScanTime < scanDelay) return;
     lastScanTime = now;
+
+  if (dedupCheckbox.checked && scanned.includes(decodedText)) {
+      showScanFeedback(true);
+      return;
+    }
+
     scanned.push(decodedText);
     const isDuplicate = scanned.filter(x => x === decodedText).length > 1;
     showScanFeedback(isDuplicate);
@@ -352,4 +366,3 @@ if (uniqueCount !== resultBody.querySelectorAll("tr").length) {
 </script>
 </body>
 </html>
-
